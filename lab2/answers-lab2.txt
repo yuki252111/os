@@ -1,0 +1,42 @@
+学号：5120809022
+姓名：黄志强
+
+1.x=uintptr_t;
+
+2.
+Entry   Base Virtual Address    Points to (logically):  
+1023    0xffc0000              page table for top 4MB of phys memory  
+1022    0xff80000              page table for top 4MB~8MB phys memory  
+.................    
+... free ........
+.................
+960     0xf011a000             page table directory(kern_pgdir)
+end
+.................
+...... kernel....
+.................
+960     0xf0000000(KERNBASE)   page table for kernel code, same as 0 physical
+959     0xefc00000(KSTACKTOP)  kernel data top  
+958     0xef800000(ULIM)       current page table 
+957     0xef400000(UVPT)       pages space max position
+956     0xef000000(UPAGES)     pages space min position(pages[0])
+..................
+......User........
+..................
+
+2       0x00800000(UTEXT)      User .text data
+1       0x00400000                 unknow
+0       0x00000000(0)          Same as 960 (then turn to NULL)
+
+3.page table 存的不仅仅是物理地址，是物理地址和bit未进行操作的结果，物理地址低12位都是设置权限bit
+的，所以可以保护物理地址。
+
+4.pages在UPAGRS和UVPT之间，每个Page 8byte，所以总的大小为PTSIZE/8*PGSIZE=2GB。
+
+
+5.npages=16639,所以物理空间有16639个page，16639/1024要17个Page，所以一级页表要17entry，二级页表要17个PAGE，大小：
+17 *4 + 17 * PGSIZE = 69700 Byte = 68.07 KB.
+
+6.jmp *%eax使得eip跳到kernbase之上。
+  之所以eip在低地址也能用是因为[kernbase,kernbase+4MB]和[0,4MB]都映射到物理地址[0,4MB],如果没有的话，
+  那么虚拟地址[0,4MB]没有物理地址对应，自然会报错。
